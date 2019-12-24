@@ -1,13 +1,14 @@
 # [Advent of Code 2019](https://adventofcode.com/2019/)
 
-In Julia (what else?)
+This is my attempt at solving the Advent Of Code problems in Julia (what else?),
+trying to provide reasonably efficient solutions.
 
 
 ## Performances
 
 ```sh
 export AOC_PERF=1
-julia --project runtests.jl
+julia --project test/runtests.jl
 ```
 
 | Title | Mem [MiB] | Allocs | Time [ms] |
@@ -22,3 +23,4 @@ julia --project runtests.jl
 | 4.2   |       0.0 |      0 |      8.31 |
 | 5.1   |      0.05 |    707 |      0.22 |
 | 5.2   |      0.05 |    707 |       0.2 |
+| 6     |      1.21 |  20187 |      1.23 |
