@@ -11,6 +11,7 @@ using Jive
     include("day04.jl")
     include("day05.jl")
     include("day06.jl")
+    include("day07.jl")
 end
 
 TestUtils.output("perfs.md")

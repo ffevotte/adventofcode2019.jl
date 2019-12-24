@@ -5,15 +5,13 @@ using AdventOfCode.Computer
 
 function part1()
     prog = read_program("input05.dat")
-    prog.input = 1
-    run_program!(prog)
+    run_program!(prog, 1)
     prog.output
 end
 
 function part2()
     prog = read_program("input05.dat")
-    prog.input = 5
-    run_program!(prog)
+    run_program!(prog, 5)
     prog.output
 end
 

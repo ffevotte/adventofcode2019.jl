@@ -17,7 +17,8 @@ function part2(output)
 
     for i in 0:99
         for j in 0:99
-            p.mem .= p_orig.mem
+            reset!(p, p_orig)
+
             p.mem[2] = i
             p.mem[3] = j
             run_program!(p)

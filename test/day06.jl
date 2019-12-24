@@ -1,6 +1,6 @@
 using SafeTestsets
 
-@safetestset "Day05" begin
+@safetestset "Day06" begin
     using AdventOfCode.TestUtils
     using AdventOfCode.Day06
 
