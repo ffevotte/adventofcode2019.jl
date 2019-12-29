@@ -2,16 +2,40 @@ module Computer
 export Program, read_program, run_program!, step_program!, reset!
 
 
-mutable struct Program
-    mem     :: Vector{Int}
-    pointer :: Int
-    code    :: Int
-
-    input   :: Int
-    output  :: Int
+struct Memory
+    vect :: Vector{Int}
+    dict :: Dict{Int, Int}
 end
 
-Program(p) = Program(p, 0,0,0,0) |> reset!
+Memory(v::Vector{Int}) = Memory(v, Dict())
+
+function Base.getindex(m::Memory, i::Int)
+    if i <= length(m.vect)
+        @inbounds m.vect[i]
+    else
+        get(m.dict, i, 0)
+    end
+end
+
+function Base.setindex!(m::Memory, val::Int, i::Int)
+    if i <= length(m.vect)
+        @inbounds m.vect[i] = val
+    else
+        m.dict[i] = val
+    end
+end
+
+mutable struct Program
+    mem      :: Memory
+    pointer  :: Int
+    code     :: Int
+    rel_base :: Int
+
+    input    :: Int
+    output   :: Int
+end
+
+Program(p) = Program(Memory(p), 0,0,0,0,0) |> reset!
 
 read_program(fname) = open(fname) do f
     parse.(Int, split(readline(f), ",")) |> Program
@@ -26,8 +50,16 @@ macro read_args(N)
         x = Symbol("x_", i)
         param = Symbol("param_", i)
         block = quote
-            $r = prog.mem[prog.pointer]
-            $x = $param==1 ? $r : prog.mem[1+$r]
+            $x = prog.mem[prog.pointer]
+            if     $param == 0
+                $r = $x
+                $x = prog.mem[1+$r]
+            elseif $param == 1
+                $r = -1
+            elseif $param == 2
+                $r = $x + prog.rel_base
+                $x = prog.mem[1+$r]
+            end
             prog.pointer += 1
         end |> esc
         push!(ret.args, block)
@@ -35,21 +67,36 @@ macro read_args(N)
     ret
 end
 
-run_program!(p::Vector{Int}, inputs=(0)) = run_program!(Program(p), inputs)
+function run_program!(p::Vector{Int}, inputs=(0))
+    p = Program(p)
+    run_program!(p, inputs)
+    p
+end
 
 function run_program!(prog::Program, inputs=(0))
+    outputs = Int[]
     for input in inputs
         prog.input = input
-        step_program!(prog)
+        while true
+            step_program!(prog)
+            if     prog.code == 3
+                break # feed next input
+            elseif prog.code == 4
+                push!(outputs, prog.output)
+            elseif prog.code == 99
+                return outputs
+            else
+                error("unexpected program stopping code: $(prog.code)")
+            end
+        end
     end
-    @assert prog.code == 99
-    prog
 end
 
 function step_program!(prog::Program)
     input_available = true
 
-    @inbounds while true
+    while true
+        pointer_reset = prog.pointer
         instr = prog.mem[prog.pointer]
         (instr, prog.code) = divrem(instr, 100)
         Base.Cartesian.@nexprs 3 j -> begin
@@ -68,7 +115,7 @@ function step_program!(prog::Program)
         # Add
         if prog.code == 1
             @read_args 3
-            @assert param_3 == 0
+            @assert r_3 != -1
             prog.mem[1+r_3] = x_1 + x_2
             continue
         end
@@ -76,7 +123,7 @@ function step_program!(prog::Program)
         # Mul
         if prog.code == 2
             @read_args 3
-            @assert param_3 == 0
+            @assert r_3 != -1
             prog.mem[1+r_3] = x_1 * x_2
             continue
         end
@@ -84,12 +131,12 @@ function step_program!(prog::Program)
         # Input
         if prog.code == 3
             @read_args 1
-            @assert param_1 == 0
+            @assert r_1 != -1
             if input_available
                 prog.mem[1+r_1] = prog.input
                 input_available = false
             else
-                prog.pointer -= 2
+                prog.pointer = pointer_reset
                 return prog
             end
             continue
@@ -99,7 +146,7 @@ function step_program!(prog::Program)
         if prog.code == 4
             @read_args 1
             prog.output = x_1
-            continue
+            return prog
         end
 
         # Jump non-zero
@@ -123,7 +170,7 @@ function step_program!(prog::Program)
         # Less than
         if prog.code == 7
             @read_args 3
-            @assert param_3 == 0
+            @assert r_3 != -1
             prog.mem[1+r_3] = x_1<x_2 ? 1 : 0
             continue
         end
@@ -131,8 +178,15 @@ function step_program!(prog::Program)
         # Equals
         if prog.code == 8
             @read_args 3
-            @assert param_3 == 0
+            @assert r_3 != -1
             prog.mem[1+r_3] = x_1==x_2 ? 1 : 0
+            continue
+        end
+
+        # Adjust relative base
+        if prog.code == 9
+            @read_args 1
+            prog.rel_base += x_1
             continue
         end
 
@@ -145,7 +199,8 @@ function step_program!(prog::Program)
 end
 
 function reset!(dest::Program, src::Program)
-    dest.mem .= src.mem
+    copy!(dest.mem.vect, src.mem.vect)
+    copy!(dest.mem.dict, src.mem.dict)
     reset!(dest)
 end
 

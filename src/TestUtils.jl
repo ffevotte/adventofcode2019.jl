@@ -7,7 +7,6 @@ import Markdown: Table, MD
 export btest
 
 function init()
-    BenchmarkTools.DEFAULT_PARAMETERS.samples = 2
     BenchmarkTools.DEFAULT_PARAMETERS.seconds = 1
     global table = [["Title", "Mem [MiB]", "Allocs", "Time [ms]"]]
 

@@ -6,7 +6,7 @@ using SafeTestsets
 
     @testset "run_program" begin
         using AdventOfCode.Computer
-        @test run_program!([1002,4,3,4,33]).mem == [1002,4,3,4,99]
+        @test run_program!([1002,4,3,4,33]).mem.vect == [1002,4,3,4,99]
 
         p = Program([3,0,4,0,99])
         run_program!(p, [42])

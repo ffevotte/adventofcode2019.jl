@@ -13,7 +13,7 @@ end
 
 function part2(output)
     p_orig = read_program("input02.dat")
-    p = Program(similar(p_orig.mem))
+    p = Program(similar(p_orig.mem.vect))
 
     for i in 0:99
         for j in 0:99
@@ -21,7 +21,7 @@ function part2(output)
 
             p.mem[2] = i
             p.mem[3] = j
-            run_program!(p)
+            step_program!(p)
             if p.mem[1] == output
                 return 100*i+j
             end
